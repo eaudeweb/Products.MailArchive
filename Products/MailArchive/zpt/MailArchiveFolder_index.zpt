@@ -1,5 +1,5 @@
-<span tal:replace="structure here/standard_html_header" />
-
+<metal:block use-macro="here/standard_template.pt/macros/page">
+<metal:block fill-slot="body">
 <h1 tal:content="here/title_or_id" />
 
 <span tal:replace="structure here/index_header"/>
@@ -22,6 +22,5 @@
 		</td>
 	</tr>
 </table>
-
-<span tal:replace="structure here/index_footer"/>
-<span tal:replace="structure here/standard_html_footer" />
+</metal:block>
+</metal:block>

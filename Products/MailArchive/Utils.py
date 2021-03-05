@@ -136,7 +136,7 @@ class Utils(object):
     #def delete_file(self, path):
     #    unlink(path)
 
-    def get_mboxes(self, path, ignore_list):
+    def get_mboxes(self, path, ignore_list, include_list=['environment']):
         mbox = []
         others = []
         for f in self.get_files(path):
@@ -145,6 +145,8 @@ class Utils(object):
                 others.append((abs_path, f))
                 continue
             if not self.valid_file(abs_path):    # Drop directories etc.
+                continue
+            if (f[:-4] not in include_list) and (f not in include_list):
                 continue
             if (f[:-4] in ignore_list) or (f in ignore_list):
                 continue
