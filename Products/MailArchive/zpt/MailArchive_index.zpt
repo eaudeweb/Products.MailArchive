@@ -5,6 +5,22 @@
 						rkey python:request.get('rkey', '');
 						items python:here.sortMboxMsgs(skey, rkey);
 						url here/absolute_url">
+<script type="text/javascript"
+  src="/++resource++Products.Naaya/lib/datatables/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" type="text/css"
+href="/++resource++Products.Naaya/lib/datatables/jquery.dataTables.css" />
+<script type="text/javascript">
+    $(document).ready(function(){
+        if ($('.sortable').length){
+            $('.sortable').dataTable({
+                'aaSorting': [[0, "desc"]],
+                'sPaginationType': 'full_numbers',
+                "aLengthMenu": [[10, 25, 50, -1],
+                                [10, 25, 50, "All"]]
+            });
+        }
+    });
+</script>
 <h1 tal:content="here/title_or_id" />
 <ul>
 	<li>
