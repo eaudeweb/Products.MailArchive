@@ -417,7 +417,7 @@ class MailArchiveFolder(Folder, Utils):
             RESPONSE.setStatus('NotFound')
             return RESPONSE
 
-    security.declareProtected(view, 'cron_update_archives')
+    security.declarePublic('cron_update_archives')
     def cron_update_archives(self, key, REQUEST=None, RESPONSE=None):
         """ """
         if key == self.cron_key:
