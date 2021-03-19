@@ -22,7 +22,6 @@ Contributor(s):
     Dragos Chirila (Finsiel Romania)
 '''
 
-import HTMLParser
 import mailbox
 import sys
 import os.path
@@ -119,8 +118,7 @@ class mbox(mbox_filters, Utils):
         return msg[2]
 
     def get_msg_subject(self, msg):
-        h = HTMLParser.HTMLParser()
-        return h.unescape(msg[3])
+        return msg[3]
 
     def get_msg_date(self, msg):
         return msg[4]
