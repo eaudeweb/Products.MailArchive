@@ -19,7 +19,7 @@
 				msgsprevnext python:here.getPrevNext(id, skey, rkey);
 				msg_prev python:msgsprevnext[0];
 				msg_next python:msgsprevnext[1]">
-	<h1 tal:content="msg_subject" />
+	<h1 tal:content="structure msg_subject" />
 	<ul>
 		<li tal:condition="python:msg_prev!=-1">
 			<span i18n:translate="" tal:omit-tag="">Previous message</span>:
