@@ -20,7 +20,6 @@
 #    Cornel Nitu (Finsiel Romania)
 #    Dragos Chirila (Finsiel Romania)
 
-import HTMLParser
 #Zope imports
 from OFS.Image import File
 from OFS.SimpleItem import SimpleItem
@@ -101,10 +100,8 @@ class MailArchive(Folder, mbox):
         if id is not None:
             m = mbox_email(self.getMboxMsg(id))
             if m.getMessageID():
-                h = HTMLParser.HTMLParser()
-                return (m.getFrom(), m.getTo(), m.getCC(),
-                        h.unescape(m.getSubject()), m.getDateTime(),
-                        m.getContent(), m.getAttachments())
+                return (m.getFrom(), m.getTo(), m.getCC(), m.getSubject(),
+                        m.getDateTime(), m.getContent(), m.getAttachments())
 
     security.declareProtected(view, 'getPrevNext')
     def getPrevNext(self, id, skey, rkey):
