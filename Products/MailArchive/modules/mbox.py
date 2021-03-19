@@ -1,25 +1,28 @@
-#The contents of this file are subject to the Mozilla Public
-#License Version 1.1 (the "License"); you may not use this file
-#except in compliance with the License. You may obtain a copy of
-#the License at http://www.mozilla.org/MPL/
-#
-#Software distributed under the License is distributed on an "AS
-#IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-#implied. See the License for the specific language governing
-#rights and limitations under the License.
-#
-#The Original Code is MailArchive 0.5
-#
-#The Initial Owner of the Original Code is European Environment
-#Agency (EEA).  Portions created by Finsiel Romania are
-#Copyright (C) 2000 by European Environment Agency.  All
-#Rights Reserved.
-#
-#Contributor(s):
-#  Original Code: 
-#    Cornel Nitu (Finsiel Romania)
-#    Dragos Chirila (Finsiel Romania)
+'''
+The contents of this file are subject to the Mozilla Public
+License Version 1.1 (the "License"); you may not use this file
+except in compliance with the License. You may obtain a copy of
+the License at http://www.mozilla.org/MPL/
 
+Software distributed under the License is distributed on an "AS
+IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+implied. See the License for the specific language governing
+rights and limitations under the License.
+
+The Original Code is MailArchive 0.5
+
+The Initial Owner of the Original Code is European Environment
+Agency (EEA).  Portions created by Finsiel Romania are
+Copyright (C) 2000 by European Environment Agency.  All
+Rights Reserved.
+
+Contributor(s):
+  Original Code:
+    Cornel Nitu (Finsiel Romania)
+    Dragos Chirila (Finsiel Romania)
+'''
+
+import HTMLParser
 import mailbox
 import sys
 import os.path
@@ -42,7 +45,7 @@ def get_start_stop(msg):
     """
     partial_file = msg.fp
 
-    if sys.version_info >= (2,6):
+    if sys.version_info >= (2, 6):
         start = partial_file._start
         stop = partial_file._stop
 
@@ -66,9 +69,9 @@ class mbox(mbox_filters, Utils):
         self.process_mbox()
 
     def process_mbox(self):
-        #open a MBOX file and process all its content
+        # open a MBOX file and process all its content
         self.cache = {}
-        mb = mailbox.PortableUnixMailbox (open(self.path,'rb'))
+        mb = mailbox.PortableUnixMailbox(open(self.path, 'rb'))
         msg = next(mb)
         starting, ending = None, None
         while msg is not None:
@@ -79,43 +82,69 @@ class mbox(mbox_filters, Utils):
                 s = m.getSubject()
                 (result, reason) = self.run_rules(s)
                 if result:
-                    if s == '': s = '(no subject)'
+                    if s == '':
+                        s = '(no subject)'
                     from_addr = m.getFrom()
                     f = from_addr[0]
-                    if not f: f = from_addr[1]
+                    if not f:
+                        f = from_addr[1]
                     index = self.get_unique_id(m)
                     start, stop = get_start_stop(msg)
                     self.cache[index] = (
-                        index, start, stop-start,
-                        s, d, f, m.getMessageID(), m.getInReplyTo(), m.getTo(), m.getCC()
+                        index, start, stop - start, s, d, f, m.getMessageID(),
+                        m.getInReplyTo(), m.getTo(), m.getCC()
                     )
-                    #process starting, ending
-                    if starting is None: starting = d
+                    # process starting, ending
+                    if starting is None:
+                        starting = d
                     else:
-                        if d < starting: starting = d
-                    if ending is None: ending = d
+                        if d < starting:
+                            starting = d
+                    if ending is None:
+                        ending = d
                     else:
-                        if d > ending: ending = d
+                        if d > ending:
+                            ending = d
                 msg = next(mb)
         self.starting, self.ending = starting, ending
         mb = None
 
-    def get_msg_index(self, msg): return msg[0]
-    def get_msg_offset(self, msg): return msg[1]
-    def get_msg_size(self, msg): return msg[2]
-    def get_msg_subject(self, msg): return msg[3]
-    def get_msg_date(self, msg): return msg[4]
-    def get_msg_from(self, msg): return msg[5]
-    def get_msg_id(self, msg): return msg[6]
-    def get_msg_inreplyto(self, msg): return msg[7]
-    def get_msg_to(self, msg):  return msg[8]
-    def get_msg_cc(self, msg):  return msg[9]
+    def get_msg_index(self, msg):
+        return msg[0]
+
+    def get_msg_offset(self, msg):
+        return msg[1]
+
+    def get_msg_size(self, msg):
+        return msg[2]
+
+    def get_msg_subject(self, msg):
+        h = HTMLParser.HTMLParser()
+        return h.unescape(msg[3])
+
+    def get_msg_date(self, msg):
+        return msg[4]
+
+    def get_msg_from(self, msg):
+        return msg[5]
+
+    def get_msg_id(self, msg):
+        return msg[6]
+
+    def get_msg_inreplyto(self, msg):
+        return msg[7]
+
+    def get_msg_to(self, msg):
+        return msg[8]
+
+    def get_msg_cc(self, msg):
+        return msg[9]
 
     def get_mbox_file(self):
         return open(self.path, 'rb').read()
 
     def get_mbox_msg(self, index):
-        #given the message index in messages list returns the message body
+        # given the message index in messages list returns the message body
         msg_body = ''
         cache_item = self.cache.get(index, None)
         if cache_item is not None:
@@ -128,65 +157,70 @@ class mbox(mbox_filters, Utils):
 
     def __get_mbox_thread(self, msgs, node, depth):
         tree = []
-        l = [msg for msg in msgs if msg[7] == node]
-        list(map(msgs.remove, l))
-        for msg in l:
+        messages = [msg for msg in msgs if msg[7] == node]
+        list(map(msgs.remove, messages))
+        for msg in messages:
             tree.append((depth, msg))
-            tree.extend(self.__get_mbox_thread(msgs, msg[6], depth+1))
+            tree.extend(self.__get_mbox_thread(msgs, msg[6], depth + 1))
         return tree
 
     def get_mbox_thread(self, msgs):
-        #builds threads
+        # builds threads
         r = self.__get_mbox_thread(msgs, '', 0)
         for x in msgs:
             r.append((0, x))
         return r
 
     def get_mbox_msgs(self):
-        #returns the list of messages
+        # returns the list of messages
         return list(self.cache.values())
 
     def count_mbox_msgs(self):
-        #returns the number of messages
+        # returns the number of messages
         return len(list(self.cache.keys()))
 
     def sort_mbox_msgs(self, n, r):
-        #returns a sorted list of messages
+        # returns a sorted list of messages
         t = [(x[n], x) for x in self.cache.values()]
         t.sort()
-        if r: t.reverse()
+        if r:
+            t.reverse()
         return [val for (key, val) in t]
 
     def sort_mbox_msgs_ci(self, n, r):
-        #returns a sorted list of messages - sort without case-sensitivity
+        # returns a sorted list of messages - sort without case-sensitivity
         t = [(x[n].lower(), x) for x in self.cache.values()]
         t.sort()
-        if r: t.reverse()
+        if r:
+            t.reverse()
         return [val for (key, val) in t]
 
     def get_unique_id_OLD(self, msg):
-        #returns a unique id for this message based on Message-ID
+        # returns a unique id for this message based on Message-ID
         # BUG:
-        # - this fails for messages like Message-ID: <1363282668.6978.YahooMailNeo@web160104.mail.bf1.yahoo.com>
+        # - this fails for messages like Message-ID:
+        # <1363282668.6978.YahooMailNeo@web160104.mail.bf1.yahoo.com>
         # - always returns YahooMailNeo as ID and messages are lost
         msg_id = msg.getMessageID()
         try:
             m = re.search('([\w]*)@', msg_id)
             return m.group(1) or msg_id
-        except:
+        except Exception:
             return msg_id
 
     def get_unique_id(self, msg):
-        #returns a unique id for this message based on Message-ID
-        #for a value like <1363282668.6978.YahooMailNeo@web160104.mail.bf1.yahoo.com>
+        # returns a unique id for this message based on Message-ID
+        # for a value like
+        # <1363282668.6978.YahooMailNeo@web160104.mail.bf1.yahoo.com>
         # <CA+b1K2njiA9UEMeZC=QD359iW=0XJd3OuHfBwWFOhVoN954cew@mail.gmail.com>
-        #1363282668.6978.YahooMailNeo will be returned
+        # 1363282668.6978.YahooMailNeo will be returned
         msg_id = msg.getMessageID()
         try:
             m = re.search('([\w\.]*)@', msg_id)
             return m.group(1) or msg_id
-        except:
+        except Exception:
             return msg_id
+
 
 class mbox_imap(mbox):
 
@@ -201,7 +235,7 @@ class mbox_imap(mbox):
         self.process_mbox(imap_client_ob)
 
     def process_mbox(self, imap_client_ob):
-        #open an IMAP mailbox
+        # open an IMAP mailbox
         self.cache = {}
         messages = imap_client_ob.getMailboxMessages(self.mailbox_name)
         starting, ending = None, None
@@ -212,35 +246,44 @@ class mbox_imap(mbox):
             s = m.getSubjectEx()
             (result, reason) = self.run_rules(s)
             if result:
-                if s == '' or s == u'': s = u'(no subject)'
+                if s == '' or s == u'':
+                    s = u'(no subject)'
                 from_addr = m.getFrom()
                 f = from_addr[0]
-                if not f: f = from_addr[1]
+                if not f:
+                    f = from_addr[1]
                 index = m.getMessageID()
-                #we use the full Message-ID in order to be able to query for it in the mailbox
+                # we use the full Message-ID in order to be able to query
+                # for it in the mailbox
                 start, stop = 0, 0
                 self.cache[index] = (
-                    index, start, stop-start,
-                    s, d, f, m.getMessageID(), m.getInReplyTo(), m.getTo(), m.getCC()
+                    index, start, stop - start, s, d, f, m.getMessageID(),
+                    m.getInReplyTo(), m.getTo(), m.getCC()
                 )
-                #process starting, ending
-                if starting is None: starting = d
+                # process starting, ending
+                if starting is None:
+                    starting = d
                 else:
-                    if d < starting: starting = d
-                if ending is None: ending = d
+                    if d < starting:
+                        starting = d
+                if ending is None:
+                    ending = d
                 else:
-                    if d > ending: ending = d
+                    if d > ending:
+                        ending = d
             idx += 1
         self.starting, self.ending = starting, ending
 
     def get_mbox_msg(self, index, imap_client_ob):
-        #given the message index in messages list returns the message body
+        # given the message index in messages list returns the message body
         return imap_client_ob.getMailBoxMessageBody(self.mailbox_name, index)
+
 
 def main():
     b = mbox(sys.argv[1])
     print(b.cache)
     print(b.sort_mbox_msgs(3))
 
+
 if __name__ == '__main__':
-    main ()
+    main()
