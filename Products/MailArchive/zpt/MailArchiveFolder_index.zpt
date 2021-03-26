@@ -12,7 +12,11 @@
 		<th scope="col" tal:condition="here/allow_zip">Download</th>
 	</tr>
 	<tr tal:repeat="archive here/getArchives">
-		<td><a tal:attributes="href string:${archive/absolute_url}?skey=date&amp;rkey=1" tal:content="archive/title_or_id" /></td>
+		<td>
+      <a tal:attributes="href
+        string:${archive/absolute_url}?skey=date&amp;rkey=1"
+        tal:content="archive/title_or_id" />
+    </td>
 		<td><span tal:replace="python:here.tupleToShortDate(archive.starting)" /> - <span tal:replace="python:here.tupleToShortDate(archive.ending)" /></td>
 		<td class="number" tal:content="archive/count_mbox_msgs" />
 		<td tal:condition="here/allow_zip">

@@ -136,7 +136,14 @@ class Utils(object):
     #def delete_file(self, path):
     #    unlink(path)
 
-    def get_mboxes(self, path, ignore_list, include_list=['environment']):
+    def get_mboxes(self, path, ignore_list, include_list=[
+        'environment', 'environment_2021', 'environment_2022',
+        'environment_2023', 'environment_2024', 'environment_2025',
+        'environment_2026', 'environment_2027', 'environment_2028',
+        'environment_2029', 'environment_2030', 'environment_2031',
+        'environment_2032', 'environment_2033', 'environment_2034',
+        'environment_2035', 'environment_2036', 'environment_2037',
+            'environment_2038', 'environment_2039', 'environment_2040']):
         mbox = []
         others = []
         for f in self.get_files(path):

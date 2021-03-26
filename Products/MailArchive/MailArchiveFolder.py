@@ -21,6 +21,7 @@
 #    Dragos Chirila (Finsiel Romania)
 
 import logging
+from datetime import datetime
 
 #Zope imports
 from OFS.Folder import Folder
@@ -147,7 +148,13 @@ class MailArchiveFolder(Folder, Utils):
         """ add mailboxes """
         for mb in mboxes:
             try:
-                addMailArchive(self, mb[1], '', mb[0])
+                mb_id = mb[1].split('_')
+                if len(mb_id) == 1:
+                    current_year = datetime.now().year
+                    mb_title = '%s %s' % (mb_id[0].title(), current_year)
+                else:
+                    mb_title = ' '.join(archive_id).title()
+                addMailArchive(self, mb[1], mb_title, mb[0])
             except:
                 pass
 

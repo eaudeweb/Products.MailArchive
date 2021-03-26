@@ -15,6 +15,12 @@ href="/++resource++Products.Naaya/lib/datatables/jquery.dataTables.css" />
             $('.sortable').dataTable({
                 'aaSorting': [[0, "desc"]],
                 'sPaginationType': 'full_numbers',
+                'columns': [
+                  null,
+                  null,
+                  { "width": "50%" },
+                  null
+                ],
                 "aLengthMenu": [[10, 25, 50, -1],
                                 [10, 25, 50, "All"]]
             });
@@ -22,18 +28,6 @@ href="/++resource++Products.Naaya/lib/datatables/jquery.dataTables.css" />
     });
 </script>
 <h1 tal:content="here/title_or_id" />
-<ul>
-	<li>
-		<strong i18n:translate="">Sort messages by</strong>:
-		<a tal:condition="python:skey != 'thread'" tal:attributes="href string:${url}/?skey=thread" i18n:translate="">[ thread ]</a>
-		<a tal:condition="python:skey != 'subject'" tal:attributes="href string:${url}/?skey=subject" i18n:translate="">[ subject ]</a>
-		<a tal:condition="python:skey != 'date'" tal:attributes="href string:${url}/?skey=date" i18n:translate="">[ date ]</a>
-		<a tal:condition="python:skey != 'author'" tal:attributes="href string:${url}/?skey=author" i18n:translate="">[ author ]</a>
-	</li>
-	<li>
-		<a tal:attributes="href here/get_mailarchivefolder_path"><strong i18n:translate="">Mail archive folder</strong></a>
-	</li>
-</ul>
 <p>
 	<strong i18n:translate="">Starting</strong>: <em tal:content="python:here.tupleToDate(here.starting)" /><br />
 	<strong i18n:translate="">Ending</strong>: <em tal:content="python:here.tupleToDate(here.ending)" /><br />
@@ -46,58 +40,31 @@ href="/++resource++Products.Naaya/lib/datatables/jquery.dataTables.css" />
 <thead>
 	<tr>
 	<th class="sorted" scope="col">
-		<tal:block tal:condition="python:skey=='author'">
-			<a title="Sorted - Click to reverse" rel="nofollow" tal:attributes="href python:test(rkey=='', '%s/?skey=author&rkey=1' % url, '%s/?skey=author' % url)">
-				<span i18n:translate="" tal:omit-tag="">Author</span>
-				<img tal:condition="python:rkey==''" src="misc_/MailArchive/sortup.gif" width="12" height="12" alt="" />
-				<img tal:condition="python:rkey=='1'" src="misc_/MailArchive/sortdown.gif" width="12" height="12" alt="" />
-			</a>
-		</tal:block>
-		<tal:block tal:condition="python:skey!='author'">
-			<a tal:attributes="href string:${url}/?skey=author" title="Sortable" i18n:attributes="title">
-				<span i18n:translate="" tal:omit-tag="">Author</span>
-				<img src="misc_/MailArchive/sortnot.gif" width="12" height="12" alt="" />
-			</a>
-		</tal:block>
+		<span i18n:translate="" tal:omit-tag="">From</span>
 	</th>
 	<th class="sorted" scope="col">
-		<tal:block tal:condition="python:skey=='subject'">
-			<a title="Sorted - Click to reverse" rel="nofollow" tal:attributes="href python:test(rkey=='', '%s/?skey=subject&rkey=1' % url, '%s/?skey=subject' % url)">
-				<span i18n:translate="" tal:omit-tag="">Subject</span>
-				<img tal:condition="python:rkey==''" src="misc_/MailArchive/sortup.gif" width="12" height="12" alt="" />
-				<img tal:condition="python:rkey=='1'" src="misc_/MailArchive/sortdown.gif" width="12" height="12" alt="" />
-			</a>
-		</tal:block>
-		<tal:block tal:condition="python:skey!='subject'">
-			<a tal:attributes="href string:${url}/?skey=subject" title="Sortable" i18n:attributes="title">
-				<span i18n:translate="" tal:omit-tag="">Subject</span>
-				<img src="misc_/MailArchive/sortnot.gif" width="12" height="12" alt="" />
-			</a>
-		</tal:block>
+		<span i18n:translate="" tal:omit-tag="">To</span>
 	</th>
 	<th class="sorted" scope="col">
-		<tal:block tal:condition="python:skey=='date'">
-			<a title="Sorted - Click to reverse" rel="nofollow" tal:attributes="href python:test(rkey=='', '%s/?skey=date&rkey=1' % url, '%s/?skey=date' % url)">
-				<span i18n:translate="" tal:omit-tag="">Date</span>
-				<img tal:condition="python:rkey==''" src="misc_/MailArchive/sortup.gif" width="12" height="12" alt="" />
-				<img tal:condition="python:rkey=='1'" src="misc_/MailArchive/sortdown.gif" width="12" height="12" alt="" />
-			</a>
-		</tal:block>
-		<tal:block tal:condition="python:skey!='date'">
-			<a tal:attributes="href string:${url}/?skey=date" title="Sortable" i18n:attributes="title">
-				<span i18n:translate="" tal:omit-tag="">Date</span>
-				<img src="misc_/MailArchive/sortnot.gif" width="12" height="12" alt="" />
-			</a>
-		</tal:block>
+		<span i18n:translate="" tal:omit-tag="" style="width: 50%">Subject</span>
+	</th>
+	<th class="sorted" scope="col">
+		<span i18n:translate="" tal:omit-tag="">Date</span>
 	</th>
 </thead>
 <tbody>
 <tr tal:repeat="tuple items" tal:attributes="class python:test(path('repeat/tuple/even'), 'zebraeven', '')">
 	<td tal:content="structure python:here.get_msg_from(tuple[1])" />
-	<td>
+  <td>
+    <tal:block repeat="to python:here.get_msg_to(tuple[1])">
+      <em tal:content="structure python:here.antispam(to[1])" />
+      <tal:block condition="not: repeat/to/end">, </tal:block>
+    </tal:block>
+  </td>
+  <td>
 		<tal:block tal:repeat="x python:range(0, tuple[0])"> ------ </tal:block>
 		<a tal:define="item_id python:here.urlEncode(here.get_msg_index(tuple[1]))"
-			tal:attributes="href string:${url}/message_html?skey=${skey}&amp;rkey=${rkey}&amp;id=${item_id}"
+			tal:attributes="href string:${url}/message_html?id=${item_id}"
 			tal:content="structure python:here.get_msg_subject(tuple[1])" />
 	</td>
 	<td tal:content="python:here.tupleToShortDate(here.get_msg_date(tuple[1]))" />
@@ -106,18 +73,6 @@ href="/++resource++Products.Naaya/lib/datatables/jquery.dataTables.css" />
 <p>
 	<strong i18n:translate="">Last message date</strong>: <em tal:content="python:here.tupleToDate(here.ending)" /><br />
 </p>
-<ul>
-	<li>
-		<strong i18n:translate="">Sort messages by</strong>:
-		<a tal:condition="python:skey != 'thread'" tal:attributes="href string:${url}/?skey=thread" i18n:translate="">[ thread ]</a>
-		<a tal:condition="python:skey != 'subject'" tal:attributes="href string:${url}/?skey=subject" i18n:translate="">[ subject ]</a>
-		<a tal:condition="python:skey != 'date'" tal:attributes="href string:${url}/?skey=date" i18n:translate="">[ date ]</a>
-		<a tal:condition="python:skey != 'author'" tal:attributes="href string:${url}/?skey=author" i18n:translate="">[ author ]</a>
-	</li>
-	<li>
-		<a tal:attributes="href here/get_mailarchivefolder_path"><strong i18n:translate="">Mail archive folder</strong></a>
-	</li>
-</ul>
 </tal:block>
 
 </metal:block>
