@@ -40,20 +40,21 @@ href="/++resource++Products.Naaya/lib/datatables/jquery.dataTables.css" />
 <thead>
 	<tr>
 	<th class="sorted" scope="col">
+		<span i18n:translate="" tal:omit-tag="" style="width: 10%">Date</span>
+	</th>
+	<th class="sorted" scope="col">
 		<span i18n:translate="" tal:omit-tag="">From</span>
 	</th>
 	<th class="sorted" scope="col">
 		<span i18n:translate="" tal:omit-tag="">To</span>
 	</th>
 	<th class="sorted" scope="col">
-		<span i18n:translate="" tal:omit-tag="" style="width: 50%">Subject</span>
-	</th>
-	<th class="sorted" scope="col">
-		<span i18n:translate="" tal:omit-tag="">Date</span>
+		<span i18n:translate="" tal:omit-tag="" style="width: 40%">Subject</span>
 	</th>
 </thead>
 <tbody>
 <tr tal:repeat="tuple items" tal:attributes="class python:test(path('repeat/tuple/even'), 'zebraeven', '')">
+	<td style="width:10%" tal:content="python:here.tupleToDate(here.get_msg_date(tuple[1]))" />
 	<td tal:content="structure python:here.get_msg_from(tuple[1])" />
   <td>
     <tal:block repeat="to python:here.get_msg_to(tuple[1])">
@@ -67,7 +68,6 @@ href="/++resource++Products.Naaya/lib/datatables/jquery.dataTables.css" />
 			tal:attributes="href string:${url}/message_html?id=${item_id}"
 			tal:content="structure python:here.get_msg_subject(tuple[1])" />
 	</td>
-	<td tal:content="python:here.tupleToShortDate(here.get_msg_date(tuple[1]))" />
 </tr>
 </table>
 <p>

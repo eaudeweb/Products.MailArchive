@@ -81,7 +81,10 @@
   </tal:block>
   <tal:block condition="python:msg_prev!=-1">
     <span i18n:translate="" tal:omit-tag="">Previous message</span>:
-    <a tal:define="item_id python:here.urlEncode(here.get_msg_index(msg_prev))" tal:attributes="href string:${url}/message_html?skey=${skey}&amp;rkey=${rkey}&amp;id=${item_id}" tal:content="python:here.get_msg_subject(msg_prev)" />
+    <a tal:define="item_id python:here.urlEncode(here.get_msg_index(msg_prev))"
+      tal:attributes="href
+      string:${url}/message_html?skey=${skey}&amp;rkey=${rkey}&amp;id=${item_id}"
+      tal:content="structure python:here.get_msg_subject(msg_prev)" />
   </tal:block>
   <tal:block condition="python:msg_next!=-1">
     <span i18n:translate="" tal:omit-tag="">Next message</span>:
