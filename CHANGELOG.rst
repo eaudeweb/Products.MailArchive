@@ -1,5 +1,6 @@
 Version 1.6 (unreleased)
 ========================
+* bugfix when adding mailbox with year in name
 * Improve layout
 * add 'To' to emails table columns
 * add datatable and replace old style sorting

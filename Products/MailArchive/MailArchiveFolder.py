@@ -153,7 +153,7 @@ class MailArchiveFolder(Folder, Utils):
                     current_year = datetime.now().year
                     mb_title = '%s %s' % (mb_id[0].title(), current_year)
                 else:
-                    mb_title = ' '.join(archive_id).title()
+                    mb_title = ' '.join(mb_id).title()
                 addMailArchive(self, mb[1], mb_title, mb[0])
             except:
                 pass
