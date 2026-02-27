@@ -12,7 +12,7 @@
 <table width="100%" border="0" cellpadding="2" cellspacing="2">
 	<tr>
 		<th width="20%"><label for="title">Title</label></th>
-		<td><input type="text" size="45" id="title" name="title:utf8:ustring" tal:attributes="value here/title" /></td>
+		<td><input type="text" size="45" id="title" name="title:utf8:string" tal:attributes="value here/title" /></td>
 	</tr>
 	<tr>
 		<th><label for="allow_zip">Allow download of archive</label></th>

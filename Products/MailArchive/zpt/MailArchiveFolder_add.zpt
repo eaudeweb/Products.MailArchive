@@ -16,7 +16,7 @@
 	</tr>
 	<tr>
 		<th><label for="title">Title</label></th>
-		<td valign="top"><input type="text" id="title" name="title:utf8:ustring" size="35" /></td>
+		<td valign="top"><input type="text" id="title" name="title:utf8:string" size="35" /></td>
 	</tr>
 	<tr>
 		<th><label for="allow_zip">Allow download of archive</th>
