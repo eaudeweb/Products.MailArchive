@@ -21,7 +21,6 @@ setup(name=NAME,
       url="https://github.com/eea/Products.MailArchive",
       license='GPL',
       packages=find_packages(exclude=['ez_setup']),
-      namespace_packages=['Products'],
       include_package_data=True,
       zip_safe=False,
       install_requires=[

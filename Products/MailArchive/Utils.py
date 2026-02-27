@@ -34,7 +34,7 @@ bad_chars = '.`~!?/@#$%^\'",<>|\\+=&*;:()[]{}'
 
 good_chars= '------------------------------'
 
-TRANSMAP = string.maketrans(bad_chars, good_chars)
+TRANSMAP = str.maketrans(bad_chars, good_chars)
 
 class Utils(object):
 

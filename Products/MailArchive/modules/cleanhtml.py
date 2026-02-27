@@ -25,9 +25,8 @@
 # $Id: cleanhtml.py 2783 2004-12-08 16:40:38Z roug $
 #
 import string
-import htmlentitydefs
-from HTMLParser import HTMLParser
-from types import StringType
+import html.entities as htmlentitydefs
+from html.parser import HTMLParser
 
 # Elements we don't like
 bad_elements = (
@@ -89,8 +88,8 @@ class HTMLCleaner(HTMLParser):
 
     def handle_data(self, data):
         if self.checkflag == 1:
-            if type(data) == StringType:
-                data = unicode(data, self.encoding)
+            if isinstance(data, bytes):
+                data = data.decode(self.encoding)
             self.__data.append(data)
 
 #   def start_br(self, attrs):
@@ -163,4 +162,4 @@ if __name__ == '__main__':
     import pdb
 #   pdb.set_trace()
     res = mycleaner.clean(data)
-    print res
+    print(res)

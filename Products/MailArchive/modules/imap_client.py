@@ -43,7 +43,7 @@ class imap_client(object):
             rv, data = self.__imap_connection.login(self.__imap_username, self.__imap_password)
             if rv=='OK':
                 self.__imap_flg = True
-        except Exception, error:
+        except Exception as error:
             pass
 
     def connValid(self):

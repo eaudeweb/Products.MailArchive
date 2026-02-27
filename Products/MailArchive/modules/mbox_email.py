@@ -26,10 +26,10 @@ import email
 import re
 import codecs
 from os.path import join
-from email.Utils import parseaddr, parsedate, getaddresses
-from email.Header import decode_header
+from email.utils import parseaddr, parsedate, getaddresses
+from email.header import decode_header
 
-from cleanhtml import HTMLCleaner
+from .cleanhtml import HTMLCleaner
 from Products.MailArchive.Utils import Utils
 
 charset_table = {

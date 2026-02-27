@@ -25,8 +25,8 @@ import sys
 import os.path
 import re
 
-from mbox_email import mbox_email
-from mbox_filters import mbox_filters
+from .mbox_email import mbox_email
+from .mbox_filters import mbox_filters
 from Products.MailArchive.Utils import Utils
 
 SPAM = 0
@@ -238,8 +238,8 @@ class mbox_imap(mbox):
 
 def main():
     b = mbox(sys.argv[1])
-    print b.cache
-    print b.sort_mbox_msgs(3)
+    print(b.cache)
+    print(b.sort_mbox_msgs(3))
 
 if __name__ == '__main__':
     main ()

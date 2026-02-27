@@ -23,7 +23,7 @@
 
 from App.ImageFile import ImageFile
 
-import MailArchiveFolder
+from . import MailArchiveFolder
 
 def initialize(context):
 

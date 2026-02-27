@@ -24,14 +24,14 @@
 from OFS.Image import File
 from OFS.SimpleItem import SimpleItem
 from OFS.Folder import Folder
-from Globals import InitializeClass
+from AccessControl.class_init import InitializeClass
 from AccessControl import ClassSecurityInfo
 from AccessControl.Permissions import view_management_screens, view
 from Products.PageTemplates.PageTemplateFile import PageTemplateFile
 
 #Product imports
-from modules.mbox import mbox, mbox_imap
-from modules.mbox_email import mbox_email
+from .modules.mbox import mbox, mbox_imap
+from .modules.mbox_email import mbox_email
 
 _marker = []
 
