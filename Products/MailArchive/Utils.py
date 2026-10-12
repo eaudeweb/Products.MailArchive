@@ -108,7 +108,7 @@ class Utils(object):
 
     def antispam(self, addr):
         """ All email adresses will be obfuscated. """
-        buf = map(None, addr)
+        buf = list(addr)
         for i in range(0, len(addr), choice((2,3,4))):
             buf[i] = '&#%d;' % ord(buf[i])
         return '<a href="mailto:%s">%s</a>' % (''.join(buf), ''.join(buf))

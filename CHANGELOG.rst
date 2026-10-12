@@ -7,6 +7,8 @@ Version 1.6 (unreleased)
 * configure for the Belgian Environment
   [valipod]
 * Use PEP 420 namespace packages [dumitval]
+* Fix the email address obfuscation and the message threading on Python 3
+  [dumitval]
 
 Version 1.5 (2016-12-08)
 ========================

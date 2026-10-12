@@ -128,7 +128,8 @@ class mbox(mbox_filters, Utils):
     def __get_mbox_thread(self, msgs, node, depth):
         tree = []
         l = [msg for msg in msgs if msg[7] == node]
-        map(msgs.remove, l)
+        for msg in l:
+            msgs.remove(msg)
         for msg in l:
             tree.append((depth, msg))
             tree.extend(self.__get_mbox_thread(msgs, msg[6], depth+1))
