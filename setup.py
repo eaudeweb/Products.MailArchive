@@ -4,7 +4,7 @@ import os
 from setuptools import setup, find_namespace_packages
 
 NAME = 'Products.MailArchive'
-VERSION = '1.6'
+VERSION = '2.0'
 
 setup(name=NAME,
       version=VERSION,

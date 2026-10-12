@@ -1,5 +1,6 @@
-Version 1.6 (unreleased)
+Version 2.0 (unreleased)
 ========================
+* Port to Python 3 and Zope 5 [dumitval]
 * bugfix when adding mailbox with year in name
 * Improve layout
 * add 'To' to emails table columns
