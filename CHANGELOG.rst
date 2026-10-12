@@ -6,6 +6,7 @@ Version 1.6 (unreleased)
 * add datatable and replace old style sorting
 * configure for the Belgian Environment
   [valipod]
+* Use PEP 420 namespace packages [dumitval]
 
 Version 1.5 (2016-12-08)
 ========================

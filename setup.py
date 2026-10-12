@@ -1,7 +1,7 @@
 """ MailArchive installer
 """
 import os
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 NAME = 'Products.MailArchive'
 VERSION = '1.6'
@@ -20,7 +20,7 @@ setup(name=NAME,
       author_email='webadmin@eea.europa.eu',
       url="https://github.com/eea/Products.MailArchive",
       license='GPL',
-      packages=find_packages(exclude=['ez_setup']),
+      packages=find_namespace_packages(include=['Products.*']),
       include_package_data=True,
       zip_safe=False,
       install_requires=[
