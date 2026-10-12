@@ -28,6 +28,7 @@ from AccessControl.class_init import InitializeClass
 from AccessControl import ClassSecurityInfo
 from AccessControl.Permissions import view_management_screens, view
 from Products.PageTemplates.PageTemplateFile import PageTemplateFile
+from zExceptions import NotFound
 
 #Product imports
 from .modules.mbox import mbox, mbox_imap
@@ -130,7 +131,9 @@ class MailArchive(Folder, mbox):
             if msg is not None:
                 m = mbox_email(self.getMboxMsg(msg))
                 data = m.getAttachment(att)
-                self.REQUEST.RESPONSE.setHeader('Content-Disposition', 'attachment;filename=%s' % self.quote_attachment(att))
+                if data is None:
+                    raise KeyError(id)
+                self.REQUEST.RESPONSE.setHeader('Content-Disposition', self.content_disposition(att))
                 return File(att, '', data).__of__(self)
             else:
                 return None
@@ -150,8 +153,13 @@ class MailArchive(Folder, mbox):
         name = self.toUnicode(self.urlUnquote(name))
         m = mbox_email(self.getMboxMsg(id))
         data = m.getAttachment(name)
-        self.REQUEST.RESPONSE.setHeader('Content-Disposition', 'attachment;filename=%s' % self.quote_attachment(name))
-        return File(name, '', data).__of__(self)
+        if data is None:
+            raise NotFound(name)
+        f = File(name, '', data)
+        RESPONSE = self.REQUEST.RESPONSE
+        RESPONSE.setHeader('Content-Type', f.getContentType())
+        RESPONSE.setHeader('Content-Disposition', self.content_disposition(name))
+        return data
 
 InitializeClass(MailArchive)
 

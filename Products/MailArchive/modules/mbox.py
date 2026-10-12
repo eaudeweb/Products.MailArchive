@@ -20,7 +20,6 @@
 #    Cornel Nitu (Finsiel Romania)
 #    Dragos Chirila (Finsiel Romania)
 
-import mailbox
 import sys
 import os.path
 import re
@@ -34,22 +33,26 @@ KEEP = 1
 UNSURE = 2
 
 
-def get_start_stop(msg):
-    """
-    the `mailbox._PartialFile` class has internal `start` & `stop`
-    attributes whose name changed in newer Python versions.
-    """
-    partial_file = msg.fp
+def iter_mbox_offsets(path):
+    """ Yield (start, stop) byte offsets of each message, after its From line """
+    with open(path, 'rb') as f:
+        start = None
+        while True:
+            pos = f.tell()
+            line = f.readline()
+            if not line or line.startswith(b'From '):
+                if start is not None:
+                    yield start, pos
+                if not line:
+                    break
+                start = f.tell()
 
-    if sys.version_info >= (2,6):
-        start = partial_file._start
-        stop = partial_file._stop
 
-    else:
-        start = partial_file.start
-        stop = partial_file.stop
-
-    return start, stop
+def _sort_value(value):
+    # messages without a parsable date sort first
+    if value is None:
+        return ()
+    return value
 
 
 class mbox(mbox_filters, Utils):
@@ -67,37 +70,29 @@ class mbox(mbox_filters, Utils):
     def process_mbox(self):
         #open a MBOX file and process all its content
         self.cache = {}
-        mb = mailbox.PortableUnixMailbox (open(self.path,'rb'))
-        msg = mb.next()
         starting, ending = None, None
-        while msg is not None:
-            document = msg.fp.read()
-            if document is not None:
-                m = mbox_email(''.join(msg.headers))
-                d = msg.getdate('Date')
+        with open(self.path, 'rb') as f:
+            for start, stop in iter_mbox_offsets(self.path):
+                f.seek(start)
+                m = mbox_email(f.read(stop - start), headersonly=True)
+                d = m.getDateTime()
                 s = m.getSubject()
                 (result, reason) = self.run_rules(s)
                 if result:
                     if s == '': s = '(no subject)'
                     from_addr = m.getFrom()
-                    f = from_addr[0]
-                    if not f: f = from_addr[1]
+                    f_addr = from_addr[0]
+                    if not f_addr: f_addr = from_addr[1]
                     index = self.get_unique_id(m)
-                    start, stop = get_start_stop(msg)
                     self.cache[index] = (
                         index, start, stop-start,
-                        s, d, f, m.getMessageID(), m.getInReplyTo(), m.getTo(), m.getCC()
+                        s, d, f_addr, m.getMessageID(), m.getInReplyTo(), m.getTo(), m.getCC()
                     )
                     #process starting, ending
-                    if starting is None: starting = d
-                    else:
-                        if d < starting: starting = d
-                    if ending is None: ending = d
-                    else:
-                        if d > ending: ending = d
-                msg = mb.next()
+                    if d is not None:
+                        if starting is None or d < starting: starting = d
+                        if ending is None or d > ending: ending = d
         self.starting, self.ending = starting, ending
-        mb = None
 
     def get_msg_index(self, msg): return msg[0]
     def get_msg_offset(self, msg): return msg[1]
@@ -111,18 +106,17 @@ class mbox(mbox_filters, Utils):
     def get_msg_cc(self, msg):  return msg[9]
 
     def get_mbox_file(self):
-        return open(self.path, 'rb').read()
+        with open(self.path, 'rb') as f:
+            return f.read()
 
     def get_mbox_msg(self, index):
         #given the message index in messages list returns the message body
-        msg_body = ''
+        msg_body = b''
         cache_item = self.cache.get(index, None)
         if cache_item is not None:
-            f = open(self.path, 'rb')
-            f.seek(self.get_msg_offset(cache_item))
-            msg_body = f.read(self.get_msg_size(cache_item))
-            f.close()
-            f = None
+            with open(self.path, 'rb') as f:
+                f.seek(self.get_msg_offset(cache_item))
+                msg_body = f.read(self.get_msg_size(cache_item))
         return msg_body
 
     def __get_mbox_thread(self, msgs, node, depth):
@@ -144,7 +138,7 @@ class mbox(mbox_filters, Utils):
 
     def get_mbox_msgs(self):
         #returns the list of messages
-        return self.cache.values()
+        return list(self.cache.values())
 
     def count_mbox_msgs(self):
         #returns the number of messages
@@ -152,17 +146,13 @@ class mbox(mbox_filters, Utils):
 
     def sort_mbox_msgs(self, n, r):
         #returns a sorted list of messages
-        t = [(x[n], x) for x in self.cache.values()]
-        t.sort()
-        if r: t.reverse()
-        return [val for (key, val) in t]
+        return sorted(self.cache.values(),
+                      key=lambda x: (_sort_value(x[n]), x[0]), reverse=bool(r))
 
     def sort_mbox_msgs_ci(self, n, r):
         #returns a sorted list of messages - sort without case-sensitivity
-        t = [(x[n].lower(), x) for x in self.cache.values()]
-        t.sort()
-        if r: t.reverse()
-        return [val for (key, val) in t]
+        return sorted(self.cache.values(),
+                      key=lambda x: (x[n].lower(), x[0]), reverse=bool(r))
 
     def get_unique_id_OLD(self, msg):
         #returns a unique id for this message based on Message-ID
@@ -171,7 +161,7 @@ class mbox(mbox_filters, Utils):
         # - always returns YahooMailNeo as ID and messages are lost
         msg_id = msg.getMessageID()
         try:
-            m = re.search('([\w]*)@', msg_id)
+            m = re.search(r'([\w]*)@', msg_id)
             return m.group(1) or msg_id
         except:
             return msg_id
@@ -183,7 +173,7 @@ class mbox(mbox_filters, Utils):
         #1363282668.6978.YahooMailNeo will be returned
         msg_id = msg.getMessageID()
         try:
-            m = re.search('([\w\.]*)@', msg_id)
+            m = re.search(r'([\w\.]*)@', msg_id)
             return m.group(1) or msg_id
         except:
             return msg_id
@@ -207,12 +197,12 @@ class mbox_imap(mbox):
         starting, ending = None, None
         idx = 1
         for msg in messages:
-            m = mbox_email(msg.as_string())
+            m = mbox_email(msg.as_bytes(), headersonly=True)
             d = m.getDateTimeEx()
             s = m.getSubjectEx()
             (result, reason) = self.run_rules(s)
             if result:
-                if s == '' or s == u'': s = u'(no subject)'
+                if not s: s = '(no subject)'
                 from_addr = m.getFrom()
                 f = from_addr[0]
                 if not f: f = from_addr[1]
@@ -224,12 +214,9 @@ class mbox_imap(mbox):
                     s, d, f, m.getMessageID(), m.getInReplyTo(), m.getTo(), m.getCC()
                 )
                 #process starting, ending
-                if starting is None: starting = d
-                else:
-                    if d < starting: starting = d
-                if ending is None: ending = d
-                else:
-                    if d > ending: ending = d
+                if d is not None:
+                    if starting is None or d < starting: starting = d
+                    if ending is None or d > ending: ending = d
             idx += 1
         self.starting, self.ending = starting, ending
 
@@ -240,7 +227,7 @@ class mbox_imap(mbox):
 def main():
     b = mbox(sys.argv[1])
     print(b.cache)
-    print(b.sort_mbox_msgs(3))
+    print(b.sort_mbox_msgs(3, 0))
 
 if __name__ == '__main__':
     main ()

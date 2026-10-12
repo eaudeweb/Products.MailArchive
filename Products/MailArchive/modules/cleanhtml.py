@@ -24,8 +24,7 @@
 #
 # $Id: cleanhtml.py 2783 2004-12-08 16:40:38Z roug $
 #
-import string
-import html.entities as htmlentitydefs
+from html import escape
 from html.parser import HTMLParser
 
 # Elements we don't like
@@ -58,6 +57,13 @@ good_attributes = (
 
 bad_attributes = ('target',)
 
+
+def quote_attr(value):
+    """ Escape an attribute value; HTMLParser returns it unescaped """
+    if value is None:
+        return ''
+    return escape(value, quote=True)
+
 class HTMLCleaner(HTMLParser):
     """ This class cleans malicous HTML code
         You call it like this:
@@ -68,7 +74,8 @@ class HTMLCleaner(HTMLParser):
     """
 
     def __init__(self, encoding='iso8859-1'):
-        HTMLParser.__init__(self)
+        # keep entities escaped, as the Python 2 HTMLParser did
+        HTMLParser.__init__(self, convert_charrefs=False)
         self.encoding = encoding
         self.tagstack = []
         self.checkflag = 0  # Are we in a tag we check?
@@ -83,7 +90,7 @@ class HTMLCleaner(HTMLParser):
         self.inbody = 0
         self.__data = []
         self.feed(data)
-        return string.join(self.__data,'')
+        return ''.join(self.__data)
 
 
     def handle_data(self, data):
@@ -115,10 +122,10 @@ class HTMLCleaner(HTMLParser):
                 if attr[0] == 'src':
                     self.__data.append(' %s="reference-removed"' %  attr[0])
                 elif attr[0] == 'href':
-		    # Don't allow content spam
-                    self.__data.append(' %s="%s" rel="nofollow"' % ( attr[0], attr[1]))
+                    # Don't allow content spam
+                    self.__data.append(' %s="%s" rel="nofollow"' % (attr[0], quote_attr(attr[1])))
                 elif attr[0] in good_attributes:
-                    self.__data.append(' %s="%s"' % ( attr[0], attr[1]))
+                    self.__data.append(' %s="%s"' % (attr[0], quote_attr(attr[1])))
             if tag in empty_elements:
                 self.__data.append(" />")
             else:

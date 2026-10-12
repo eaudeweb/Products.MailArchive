@@ -22,7 +22,6 @@
 #
 #Thanks to Noah Spurrier for his code
 
-import string
 import re
 from os.path import join
 
@@ -38,8 +37,8 @@ class mbox_filters:
     
     def __init__(self):
         file_path = join(package_home(globals()) ,BLACKWORDS)
-        buf = open(file_path).readlines()
-        blackword_list = map(string.strip, buf)
+        with open(file_path, encoding='utf-8') as f:
+            blackword_list = [line.strip() for line in f]
         self.blackword_pattern_list = self.compile_pattern_list([i for i in blackword_list if i != ''])
 
     def compile_pattern_list (self, string_list):
@@ -70,4 +69,4 @@ class mbox_filters:
         except Exception as e:
             response_message = """The rule processor raised an exception.
                 Sometimes this is from a bad regular expression.\n"""
-            return KEEP, response_message
+            return KEEP, response_message

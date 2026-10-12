@@ -25,10 +25,8 @@ import time
 from random import choice
 from os.path import join, getmtime, isdir, isfile, getsize
 from os import listdir
-import urllib
+from urllib.parse import quote, unquote
 from Products.PythonScripts.standard import url_quote, html_quote
-
-from Products.PythonScripts.standard import html_quote
 
 bad_chars = '.`~!?/@#$%^\'",<>|\\+=&*;:()[]{}'
 
@@ -71,7 +69,7 @@ class Utils(object):
         elif value == '':
             return []
         else:
-            return filter(lambda x:x!='', value.split('\r\n'))
+            return [x for x in value.split('\r\n') if x != '']
 
     def list_to_lines(self, values):
         """Takes a list of values and returns a value for a textarea control"""
@@ -82,9 +80,7 @@ class Utils(object):
         return msg.replace('@', '&#64;')
 
     def remove_duplicates(self, l):
-        d = {}
-        [ d.setdefault(i,None) for i in l ]
-        return d.keys()
+        return list(dict.fromkeys(l))
 
     #We don't really care about the download of the mailboxes.
     #The mbox format is little used outside the Unix community.
@@ -104,7 +100,16 @@ class Utils(object):
         return int(p_size/1024 + 1)
 
     def quote_attachment(self, name):
-        return self.toUtf8(name).replace(' ', '_')
+        return name.replace(' ', '_')
+
+    def content_disposition(self, name):
+        """ Content-Disposition header value for an attachment download """
+        name = self.quote_attachment(name)
+        try:
+            name.encode('ascii')
+            return 'attachment;filename=%s' % name
+        except UnicodeEncodeError:
+            return "attachment;filename*=UTF-8''%s" % quote(name)
 
     def antispam(self, addr):
         """ All email adresses will be obfuscated. """
@@ -158,7 +163,9 @@ class Utils(object):
             if (f[:-4] in ignore_list) or (f in ignore_list):
                 continue
             else:
-                if open(abs_path).read(5) == 'From ':
+                with open(abs_path, 'rb') as fp:
+                    is_mbox = fp.read(5) == b'From '
+                if is_mbox:
                     mbox.append((abs_path, f))
                 else:
                     others.append((abs_path, f))
@@ -187,37 +194,34 @@ class Utils(object):
 
     def toUtf8(self, s):
         #convert to utf-8
-        if isinstance(s, unicode): return s.encode('utf-8')
-        else: return str(s)
+        if isinstance(s, str): return s.encode('utf-8')
+        else: return bytes(s)
 
     def toUnicode(self, s):
         #convert to unicode
-        if not isinstance(s, unicode): return unicode(s, 'utf-8')
+        if isinstance(s, bytes): return s.decode('utf-8')
         else: return s
 
     def toUnicodeEx(self, s):
         #convert to unicode
-        if isinstance(s, unicode): return s
+        if isinstance(s, str): return s
         else:
             try:
-                return unicode(s, 'utf-8')
-            except:
-                try:
-                    return unicode(s, 'latin-1')
-                except:
-                    return s
+                return s.decode('utf-8')
+            except UnicodeDecodeError:
+                return s.decode('latin-1')
 
     def urlQuote(self, value):
         #escapes single characters
-        return urllib.quote(value)
+        return quote(value)
 
     def urlUnquote(self, value):
         #transform escapes in single characters
-        return urllib.unquote(value)
+        return unquote(value)
 
     def cleanupMboxId(self, id=''):
         #clean up an id given by the user
-        if isinstance(id, unicode): x = id.encode('utf-8')
+        if isinstance(id, bytes): x = id.decode('utf-8')
         else: x = str(id)
         x = x.strip(' -')
         x = x.translate(TRANSMAP)

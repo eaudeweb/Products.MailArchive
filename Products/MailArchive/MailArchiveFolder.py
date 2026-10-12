@@ -129,10 +129,9 @@ class MailArchiveFolder(Folder, Utils):
     def getArchives(self):
         """ returns the archives list sorted by the 'starting' property
             - the date of the first message in the mbox file """
-        l = [(x.starting, x) for x in self.objectValues(['MailArchive', 'MailArchiveIMAP'])]
-        l.sort()
-        l.reverse()
-        return [val for (key, val) in l]
+        l = self.objectValues(['MailArchive', 'MailArchiveIMAP'])
+        return sorted(l, key=lambda x: (x.starting or (), x.getId()),
+                      reverse=True)
 
     security.declarePrivate('_delete_archives')
     def _delete_archives(self, archives, mboxes):
@@ -141,8 +140,9 @@ class MailArchiveFolder(Folder, Utils):
         del_objs = self.list_difference(archives, mboxes)
         del_objs.extend(self.mbox_ignore)
         #check if objects are in Zope to avoid AttributeError
-        buf = [ x for x in del_objs if hasattr(self, x) ]
-        self.manage_delObjects(self.remove_duplicates(buf))
+        buf = [ x for x in del_objs if x in self.objectIds() ]
+        if buf:
+            self.manage_delObjects(self.remove_duplicates(buf))
 
     security.declarePrivate('_add_archives')
     def _add_archives(self, mboxes):
@@ -156,13 +156,15 @@ class MailArchiveFolder(Folder, Utils):
                 else:
                     mb_title = ' '.join(mb_id).title()
                 addMailArchive(self, mb[1], mb_title, mb[0])
-            except:
-                pass
+            except Exception:
+                logger.exception('Cannot load the mailbox %s', mb[0])
 
     security.declarePrivate('_reload_archive')
     def _reload_archives(self, zobjs, mboxes):
         """ reload archives """
-        [ self.manage_delObjects(mbox[1]) for mbox in mboxes if mbox[1] in zobjs]
+        for mbox in mboxes:
+            if mbox[1] in zobjs:
+                self.manage_delObjects([mbox[1]])
         self._add_archives(mboxes)
 
     security.declarePrivate('_load_archives')
@@ -193,13 +195,15 @@ class MailArchiveFolder(Folder, Utils):
             mb_id = self.cleanupMboxId(mb)
             try:
                 addMailArchiveIMAP(self, imap_client_ob, mb_id, '', mb)
-            except:
-                pass
+            except Exception:
+                logger.exception('Cannot load the IMAP mailbox %s', mb)
 
     security.declarePrivate('_reload_archives_imap')
     def _reload_archives_imap(self, zobjs, mboxes, imap_client_ob):
         """ reload archives for imap """
-        [self.manage_delObjects(mbox) for mbox in mboxes if mbox in zobjs]
+        for mbox in mboxes:
+            if mbox in zobjs:
+                self.manage_delObjects([mbox])
         self._add_archives_imap(mboxes, imap_client_ob)
 
     security.declarePrivate('updateArchives')
@@ -226,7 +230,7 @@ class MailArchiveFolder(Folder, Utils):
                     m = getattr(self, mbox[1])
                     # If the mailbox file already exists on the filesystem and
                     # it hasn't changed, then don't read it again
-                    if m.size != self.get_mbox_size(mbox[0]) and m.last_modified != self.get_last_modif(mbox[0]):
+                    if m.size != self.get_mbox_size(mbox[0]) or m.last_modified != self.get_last_modif(mbox[0]):
                         buf.append(mbox)
                 else:
                     buf.append(mbox)

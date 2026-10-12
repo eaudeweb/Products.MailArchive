@@ -25,9 +25,11 @@
 import email
 import re
 import codecs
+from html import escape
 from os.path import join
 from email.utils import parseaddr, parsedate, getaddresses
 from email.header import decode_header
+from email.parser import BytesParser, Parser
 
 from .cleanhtml import HTMLCleaner
 from Products.MailArchive.Utils import Utils
@@ -41,12 +43,41 @@ charset_table = {
 }
 
 def to_unicode(s, encoding):
+    if isinstance(s, str):
+        return s
     if encoding:
         encoding = encoding.lower()
         charset  = charset_table.get(encoding, encoding)
-        return unicode(s, charset, 'replace')
+        return s.decode(charset, 'replace')
     else:
-        return unicode(s, 'ascii', 'replace')
+        # decode_header() encodes the unencoded parts with raw-unicode-escape
+        return s.decode('raw-unicode-escape', 'replace')
+
+def bytes_to_unicode(s):
+    """ Decode 8-bit header or body bytes of unknown charset """
+    try:
+        return s.decode('utf-8')
+    except UnicodeDecodeError:
+        return s.decode('latin-1')
+
+def has_surrogates(s):
+    """ True if s holds undecodable bytes from a binary parse """
+    try:
+        s.encode('utf-8')
+        return False
+    except UnicodeEncodeError:
+        return True
+
+def get_charset(charset, default='latin-1'):
+    """ Return a codec name for the charset, or default if it is unknown """
+    if charset:
+        charset = charset_table.get(charset.lower(), charset.lower())
+        try:
+            codecs.lookup(charset)
+            return charset
+        except LookupError:
+            pass
+    return default
 
 
 def extractUrl(msg):
@@ -81,21 +112,42 @@ def to_entities_quote(str):
             res.append(ch)
     return ''.join(res)
 
-def decode_string(str):
-    bytes, encoding = decode_header(str)[0]
-    if encoding:
-        return bytes.decode(encoding)
-    else:
-        return bytes
+def decode_string(value):
+    if value is None:
+        return None
+    return ''.join([to_unicode(s, enc and get_charset(enc))
+                    for s, enc in decode_header(value)])
 
 class mbox_email(Utils):
     """ wrapper for email """
 
-    def __init__(self, msg):
-        self._msg = email.message_from_string(msg)
+    def __init__(self, msg, headersonly=False):
+        if isinstance(msg, bytes):
+            self._msg = BytesParser().parsebytes(msg, headersonly)
+        else:
+            self._msg = Parser().parsestr(msg, headersonly)
+
+    def _get_all(self, name):
+        """ Return the raw header values, with 8-bit bytes decoded """
+        name = name.lower()
+        res = []
+        for key, value in self._msg.raw_items():
+            if key.lower() == name:
+                if isinstance(value, str) and has_surrogates(value):
+                    value = bytes_to_unicode(
+                        value.encode('ascii', 'surrogateescape'))
+                res.append(str(value))
+        return res
+
+    def _get(self, name, default=''):
+        values = self._get_all(name)
+        if values:
+            return values[0]
+        return default
 
     def codecs_lookup(self, encoding):
         if encoding is not None:
+            encoding = charset_table.get(encoding.lower(), encoding)
             try:
                 codecs.lookup(encoding)
                 return 1
@@ -106,7 +158,7 @@ class mbox_email(Utils):
 
     def getTo(self):
         res = []
-        buf = getaddresses(self._msg.get_all('to', ''))
+        buf = getaddresses(self._get_all('to'))
         for i in buf:
             header = decode_header(i[0])
             data = ''.join([to_unicode(s, enc) for s, enc in header if self.codecs_lookup(enc)])
@@ -114,14 +166,14 @@ class mbox_email(Utils):
         return res
             
     def getFrom(self):
-        buf = parseaddr(self._msg.get('from', ''))
+        buf = parseaddr(self._get('from'))
         header = decode_header(buf[0])
         data = ''.join([to_unicode(s, enc) for s, enc in header if self.codecs_lookup(enc)])
         return (to_entities_quote(data), buf[1])
 
     def getCC(self):
         res = []
-        buf = getaddresses(self._msg.get_all('cc', ''))
+        buf = getaddresses(self._get_all('cc'))
         for i in buf:
             header = decode_header(i[0])
             data = ''.join([to_unicode(s, enc) for s, enc in header if self.codecs_lookup(enc)])
@@ -129,25 +181,25 @@ class mbox_email(Utils):
         return res
 
     def getSubject(self):
-        buf = self._msg.get('subject', '')
+        buf = self._get('subject')
         header = decode_header(buf)
         data = ''.join([to_unicode(s, enc) for s, enc in header if self.codecs_lookup(enc)])
         return to_entities_quote(data)
 
     def getSubjectEx(self):
-        return decode_string(self._msg.get('subject', u''))
+        return decode_string(self._get('subject'))
 
     def getDateTime(self):
-        return parsedate(self._msg.get('date', None))
+        return parsedate(self._get('date', None))
 
     def getDateTimeEx(self):
-        return email.utils.parsedate(self._msg['Date'])
+        return parsedate(self._get('date', None))
 
     def getInReplyTo(self):
-        return self._msg.get('In-Reply-To', '')
+        return self._get('In-Reply-To').strip()
 
     def getMessageID(self):
-        return self._msg.get('Message-ID', '')
+        return self._get('Message-ID').strip()
 
     def getContent(self):
         """ Walks through the message until it finds one that
@@ -157,13 +209,10 @@ class mbox_email(Utils):
         for part in self._msg.walk():
             ct_type = part.get_content_type()
             if ct_type in ['text/plain', 'text/html']:
-                p = part.get_payload(decode=True)
-                charset = self._msg.get_param("charset")
-                if charset is None:
-                    charset = "Latin-1"
-                charset = charset.lower()
-                charset = charset_table.get(charset, charset)
-                p = unicode(p, charset)
+                p = part.get_payload(decode=True) or b''
+                charset = get_charset(part.get_content_charset() or
+                                      self._msg.get_content_charset())
+                p = p.decode(charset, 'replace')
                 if ct_type == 'text/html':
                     mycleaner = HTMLCleaner()
                     try:
@@ -179,7 +228,7 @@ class mbox_email(Utils):
                     p = p.replace('\r', '')
                     p =  extractUrl(p)
                     p = '''<div style="font-family: 'Courier New', monospace; white-space: pre-wrap">%s</div>''' % p
-                payloads.append(p.encode('ascii'))
+                payloads.append(p)
                 return "".join(payloads)
 
     def getContentEx(self):
@@ -190,28 +239,29 @@ class mbox_email(Utils):
         for part in self._msg.walk():
             ct_type = part.get_content_type()
             if ct_type in ['text/plain', 'text/html']:
-                p = part.get_payload(decode=True)
+                p = part.get_payload(decode=True) or b''
                 charset = part.get_content_charset()
                 if charset is None:
                     # We cannot know the character set, so return decoded "something"
-                    p = part.get_payload(decode=True)
+                    p = bytes_to_unicode(p)
                 else:
-                    p = unicode(p, str(charset), 'ignore')
-                    if ct_type == 'text/html':
-                        mycleaner = HTMLCleaner()
-                        try:
-                            p = mycleaner.clean(p)
-                        except:
-                            pass
-                        p = p.replace('@', '&#64;')
-                    else:
-                        p = p.replace('@', '&#64;')
-                        p = p.replace('\n', '<br />')
-                        p = p.replace('\r', '')
-                        p =  extractUrl(p)
-                        p = u'''<div style="font-family: 'Courier New', monospace; white-space: pre-wrap">%s</div>''' % p
+                    p = p.decode(get_charset(charset), 'ignore')
+                if ct_type == 'text/html':
+                    mycleaner = HTMLCleaner()
+                    try:
+                        p = mycleaner.clean(p)
+                    except Exception:
+                        p = escape(p, quote=False)
+                    p = p.replace('@', '&#64;')
+                else:
+                    p = escape(p, quote=False)
+                    p = p.replace('@', '&#64;')
+                    p = p.replace('\n', '<br />')
+                    p = p.replace('\r', '')
+                    p =  extractUrl(p)
+                    p = '''<div style="font-family: 'Courier New', monospace; white-space: pre-wrap">%s</div>''' % p
                 payloads.append(p)
-                return u''.join(payloads)
+                return ''.join(payloads)
 
     def getAttachments(self):
         atts = []

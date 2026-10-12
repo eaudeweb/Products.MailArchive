@@ -38,6 +38,8 @@ class imap_client(object):
 
     def connOpen(self):
         #open connection and login
+        if not self.__imap_servername:
+            return
         try:
             self.__imap_connection = imaplib.IMAP4_SSL(self.__imap_servername)
             rv, data = self.__imap_connection.login(self.__imap_username, self.__imap_password)
@@ -71,6 +73,8 @@ class imap_client(object):
             rv, data = self.__imap_connection.list()
             if rv=='OK':
                 for item in data:
+                    if isinstance(item, bytes):
+                        item = item.decode('utf-8', 'replace')
                     flags, delimiter, mailbox_name = MAILBOXES_PATTERN.match(item).groups()
                     mailbox_name = mailbox_name.strip('"')
                     if self.isMailboxAllowed(mailbox_name, ignore_list):
@@ -83,6 +87,8 @@ class imap_client(object):
             rv, data = self.__imap_connection.list()
             if rv=='OK':
                 for item in data:
+                    if isinstance(item, bytes):
+                        item = item.decode('utf-8', 'replace')
                     flags, delimiter, mailbox_name = MAILBOXES_PATTERN.match(item).groups()
                     mailbox_name = mailbox_name.strip('"')
                     if self.isMailboxAllowed(mailbox_name, ignore_list):
@@ -111,12 +117,12 @@ class imap_client(object):
                     if rv != 'OK':
                         #ERROR getting message: skip it
                         continue
-                    r.append(email.message_from_string(msg[0][1]))
+                    r.append(email.message_from_bytes(msg[0][1]))
         return r
 
     def getMailBoxMessageBody(self, mailbox_name, msg_id):
         #get a message by Message-ID
-        r = ''
+        r = b''
         mailbox_counter = self.selectMailbox(mailbox_name)
         if mailbox_counter>0:
             rv, messages = self.__imap_connection.search(None, '(HEADER Message-ID "%s")' % msg_id)
