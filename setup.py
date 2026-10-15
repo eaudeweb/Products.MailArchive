@@ -4,7 +4,7 @@ import os
 from setuptools import setup, find_packages
 
 NAME = 'Products.MailArchive'
-VERSION = '1.6'
+VERSION = '1.7.dev0'
 
 setup(name=NAME,
       version=VERSION,

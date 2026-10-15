@@ -1,4 +1,7 @@
-Version 1.6 (unreleased)
+Version 1.7 (unreleased)
+========================
+
+Version 1.6 (2026-10-15)
 ========================
 * bugfix when adding mailbox with year in name
 * Improve layout
