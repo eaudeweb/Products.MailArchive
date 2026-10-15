@@ -26,6 +26,7 @@
 #
 import string
 import htmlentitydefs
+from cgi import escape
 from HTMLParser import HTMLParser
 from types import StringType
 
@@ -58,6 +59,13 @@ good_attributes = (
 )
 
 bad_attributes = ('target',)
+
+
+def quote_attr(value):
+    """ Escape an attribute value; HTMLParser returns it unescaped """
+    if value is None:
+        return ''
+    return escape(value, True)
 
 class HTMLCleaner(HTMLParser):
     """ This class cleans malicous HTML code
@@ -117,9 +125,9 @@ class HTMLCleaner(HTMLParser):
                     self.__data.append(' %s="reference-removed"' %  attr[0])
                 elif attr[0] == 'href':
 		    # Don't allow content spam
-                    self.__data.append(' %s="%s" rel="nofollow"' % ( attr[0], attr[1]))
+                    self.__data.append(' %s="%s" rel="nofollow"' % (attr[0], quote_attr(attr[1])))
                 elif attr[0] in good_attributes:
-                    self.__data.append(' %s="%s"' % ( attr[0], attr[1]))
+                    self.__data.append(' %s="%s"' % (attr[0], quote_attr(attr[1])))
             if tag in empty_elements:
                 self.__data.append(" />")
             else:

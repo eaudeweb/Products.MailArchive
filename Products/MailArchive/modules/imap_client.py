@@ -38,6 +38,8 @@ class imap_client(object):
 
     def connOpen(self):
         #open connection and login
+        if not self.__imap_servername:
+            return
         try:
             self.__imap_connection = imaplib.IMAP4_SSL(self.__imap_servername)
             rv, data = self.__imap_connection.login(self.__imap_username, self.__imap_password)

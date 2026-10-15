@@ -155,8 +155,8 @@ class MailArchiveFolder(Folder, Utils):
                 else:
                     mb_title = ' '.join(mb_id).title()
                 addMailArchive(self, mb[1], mb_title, mb[0])
-            except:
-                pass
+            except Exception:
+                logger.exception('Cannot load the mailbox %s', mb[0])
 
     security.declarePrivate('_reload_archive')
     def _reload_archives(self, zobjs, mboxes):
@@ -192,8 +192,8 @@ class MailArchiveFolder(Folder, Utils):
             mb_id = self.cleanupMboxId(mb)
             try:
                 addMailArchiveIMAP(self, imap_client_ob, mb_id, '', mb)
-            except:
-                pass
+            except Exception:
+                logger.exception('Cannot load the IMAP mailbox %s', mb)
 
     security.declarePrivate('_reload_archives_imap')
     def _reload_archives_imap(self, zobjs, mboxes, imap_client_ob):
@@ -225,7 +225,7 @@ class MailArchiveFolder(Folder, Utils):
                     m = getattr(self, mbox[1])
                     # If the mailbox file already exists on the filesystem and
                     # it hasn't changed, then don't read it again
-                    if m.size != self.get_mbox_size(mbox[0]) and m.last_modified != self.get_last_modif(mbox[0]):
+                    if m.size != self.get_mbox_size(mbox[0]) or m.last_modified != self.get_last_modif(mbox[0]):
                         buf.append(mbox)
                 else:
                     buf.append(mbox)
