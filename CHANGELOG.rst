@@ -1,4 +1,7 @@
-Version 3.0 (unreleased)
+Version 3.1 (unreleased)
+========================
+
+Version 3.0 (2026-10-16)
 ========================
 * Port to Python 3 and Zope 5 [dumitval]
 * bugfix when adding mailbox with year in name
